@@ -11,30 +11,18 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; padding-bottom: 100px; }
-        
-        /* 頂部客製化 */
         .top-bar { background-color: #212529; color: white; padding: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
         .client-name { font-size: 1.3rem; font-weight: 800; color: #ffc107; } 
-        
-        /* 產品列表 */
         .product-row { background: white; border-bottom: 1px solid #eee; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .p-name { font-size: 1.1rem; font-weight: 700; color: #000; line-height: 1.4; }
-        
-        /* 數量控制 */
         .qty-control { display: flex; align-items: center; background: #fff; border: 1px solid #ced4da; border-radius: 8px; padding: 2px; width: 130px; justify-content: space-between; height: 45px; flex-shrink: 0; margin-left: 10px; }
         .qty-btn { width: 40px; height: 100%; border-radius: 6px; background: #f8f9fa; color: #212529; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 1.5rem; user-select: none; }
         .qty-btn:active { background: #ffc107; }
         .qty-input { width: 40px; text-align: center; border: none; font-weight: bold; font-size: 1.3rem; color: #333; background: transparent; }
-        
-        /* 選中樣式 */
         .product-row.selected { background-color: #fffbf0; border-left: 5px solid #ffc107; }
-
-        /* 底部結帳欄 */
         .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1020; }
         .total-info { font-size: 1.2rem; font-weight: bold; color: #333; }
         .btn-whatsapp { background: #25D366; color: white; border: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
-        
-        /* 搜尋框 */
         .search-container { padding: 10px; background: white; position: sticky; top: 70px; z-index: 980; border-bottom: 1px solid #eee; }
         .form-control { border-radius: 20px; padding: 10px 20px; background-color: #f1f3f5; border: none; font-size: 1rem; }
     </style>
@@ -111,12 +99,10 @@
 
     let cart = {}; 
 
-    // === 初始化 ===
     function init() {
         renderTable();
     }
 
-    // === 渲染產品列表 ===
     function renderTable(filterText = "") {
         const container = document.getElementById('product-list');
         let html = '';
@@ -152,7 +138,6 @@
         renderTable(text);
     }
 
-    // === 更新數量 ===
     function updateQty(id, delta) {
         if (!cart[id]) cart[id] = 0;
         cart[id] += delta;
@@ -168,7 +153,6 @@
         calculateTotal();
     }
 
-    // === 計算總數 ===
     function calculateTotal() {
         let count = 0;
         for (let [id, q] of Object.entries(cart)) {
@@ -177,31 +161,31 @@
         document.getElementById('totalQty').innerText = count;
     }
 
-    // === 發送 WhatsApp ===
+    // === 發送 WhatsApp (修改後的簡潔版) ===
     function sendWhatsApp() {
         if (Object.keys(cart).length === 0) {
             alert("請先選擇產品！");
             return;
         }
 
-        // --- 設定客戶資料 ---
+        // --- 客戶資料 ---
         const customerCode = "A2769"; 
-        const phone = "85263771688"; // 惠比壽對接電話
+        const phone = "85263771688"; 
 
-        let msg = `惠比壽 訂貨單：\n(客戶編號: ${customerCode})\n`;
-        msg += "------------------------\n";
+        // 1. 修改標題: 編號在前，換行顯示 "訂貨單："
+        let msg = `${customerCode} 惠比壽\n訂貨單：\n\n`;
 
         // 保持原順序
         const orderedCart = products.filter(p => cart[p.id]);
         
         orderedCart.forEach(p => {
             const q = cart[p.id];
-            msg += `${p.name} x ${q}\n`;
+            // 2. 修改內容: 數量在前 (加空格對齊)，產品在後
+            msg += ` ${q}   ${p.name}\n`;
         });
 
-        msg += "------------------------\n";
-        msg += "麻煩晒！"; 
-
+        // 3. 刪除底部分隔線和結尾語
+        
         const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
         window.open(url, '_blank');
     }
