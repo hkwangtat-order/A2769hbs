@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta property="og:title" content="惠比壽 - 常用貨品落單表">
+    <meta property="og:description" content="香港宏達有限公司提供">
+    
+    <title>惠比壽 - 專用訂貨單</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; padding-bottom: 100px; }
+        
+        /* 頂部客製化 */
+        .top-bar { background-color: #212529; color: white; padding: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .client-name { font-size: 1.3rem; font-weight: 800; color: #ffc107; } 
+        
+        /* 產品列表 */
+        .product-row { background: white; border-bottom: 1px solid #eee; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .p-name { font-size: 1.1rem; font-weight: 700; color: #000; line-height: 1.4; }
+        
+        /* 數量控制 */
+        .qty-control { display: flex; align-items: center; background: #fff; border: 1px solid #ced4da; border-radius: 8px; padding: 2px; width: 130px; justify-content: space-between; height: 45px; flex-shrink: 0; margin-left: 10px; }
+        .qty-btn { width: 40px; height: 100%; border-radius: 6px; background: #f8f9fa; color: #212529; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 1.5rem; user-select: none; }
+        .qty-btn:active { background: #ffc107; }
+        .qty-input { width: 40px; text-align: center; border: none; font-weight: bold; font-size: 1.3rem; color: #333; background: transparent; }
+        
+        /* 選中樣式 */
+        .product-row.selected { background-color: #fffbf0; border-left: 5px solid #ffc107; }
+
+        /* 底部結帳欄 */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1020; }
+        .total-info { font-size: 1.2rem; font-weight: bold; color: #333; }
+        .btn-whatsapp { background: #25D366; color: white; border: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
+        
+        /* 搜尋框 */
+        .search-container { padding: 10px; background: white; position: sticky; top: 70px; z-index: 980; border-bottom: 1px solid #eee; }
+        .form-control { border-radius: 20px; padding: 10px 20px; background-color: #f1f3f5; border: none; font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <div class="client-name">惠比壽</div>
+            <div style="font-size: 0.9rem; opacity: 0.9; color: #ddd;">常用貨品訂單</div>
+        </div>
+        <div style="text-align: right; font-size: 0.85rem; color: #ccc;">
+            宏達批發<br>Tel: 63771688
+        </div>
+    </div>
+</div>
+
+<div class="search-container">
+    <input type="text" id="searchInput" class="form-control" placeholder="🔍 在清單中搜尋..." onkeyup="filterProducts()">
+</div>
+
+<div id="product-list">
+    </div>
+
+<div class="bottom-bar">
+    <div class="total-info">
+        共 <span id="totalQty" style="color: #d32f2f; font-size: 1.5rem;">0</span> 件貨品
+    </div>
+    <button class="btn-whatsapp" onclick="sendWhatsApp()">
+        <i class="bi bi-whatsapp"></i> 發送訂單
+    </button>
+</div>
+
+<script>
+    // === 產品數據庫 (惠比壽專用 - 嚴格按照順序) ===
+    const products = [
+        { name: "大葉" },
+        { name: "黃蘿白" },
+        { name: "日本廣島蠔2L" },
+        { name: "阿根廷赤蝦L1" },
+        { name: "壽司蝦8L" },
+        { name: "調味扇貝片" },
+        { name: "刺身蠔" },
+        { name: "大崎蟹柳" },
+        { name: "青椒仔" },
+        { name: "水菜" },
+        { name: "即食蜆" },
+        { name: "KENKO胡麻沙律汁(1L)" },
+        { name: "日本刺身帶子3S" },
+        { name: "金印芥辣粉" },
+        { name: "活赤貝" },
+        { name: "加拿大海膽" },
+        { name: "日本食研薑味烤肉醬" },
+        { name: "熟帆立貝5S" },
+        { name: "日本熟帆立貝L" },
+        { name: "木魚絲" },
+        { name: "日本大八爪 (AAA)" },
+        { name: "碎海草" },
+        { name: "三文魚籽醬油漬(大粒)500g" },
+        { name: "大粒蟹籽" },
+        { name: "一休味噌" },
+        { name: "越南有頭虎蝦13/15" },
+        { name: "日本刺身帶子4S" },
+        { name: "中粒蟹籽" },
+        { name: "七味粉S&B包裝" },
+        { name: "台灣鯛魚柳" }
+    ];
+
+    // 為每個產品生成唯一 ID (E代表Ebisu)
+    products.forEach((p, index) => {
+        p.id = "E" + (index + 1).toString().padStart(3, '0');
+    });
+
+    let cart = {}; 
+
+    // === 初始化 ===
+    function init() {
+        renderTable();
+    }
+
+    // === 渲染產品列表 ===
+    function renderTable(filterText = "") {
+        const container = document.getElementById('product-list');
+        let html = '';
+        
+        const filteredProducts = products.filter(p => {
+            if (!filterText) return true;
+            return p.name.includes(filterText);
+        });
+
+        filteredProducts.forEach(p => {
+            const qty = cart[p.id] || 0;
+            const rowClass = qty > 0 ? 'selected' : '';
+
+            html += `
+            <div class="product-row ${rowClass}">
+                <div class="p-name">${p.name}</div>
+                <div class="qty-control">
+                    <div class="qty-btn" onclick="updateQty('${p.id}', -1)">-</div>
+                    <input type="text" class="qty-input" id="qty-${p.id}" value="${qty}" readonly>
+                    <div class="qty-btn" onclick="updateQty('${p.id}', 1)">+</div>
+                </div>
+            </div>`;
+        });
+
+        if (filteredProducts.length === 0) {
+            html = '<div class="text-center p-5 text-muted">找不到相關產品</div>';
+        }
+        container.innerHTML = html;
+    }
+
+    function filterProducts() {
+        const text = document.getElementById('searchInput').value;
+        renderTable(text);
+    }
+
+    // === 更新數量 ===
+    function updateQty(id, delta) {
+        if (!cart[id]) cart[id] = 0;
+        cart[id] += delta;
+        if (cart[id] <= 0) delete cart[id];
+        
+        const input = document.getElementById(`qty-${id}`);
+        if (input) {
+            input.value = cart[id] || 0;
+            const row = input.closest('.product-row');
+            if (cart[id] > 0) row.classList.add('selected');
+            else row.classList.remove('selected');
+        }
+        calculateTotal();
+    }
+
+    // === 計算總數 ===
+    function calculateTotal() {
+        let count = 0;
+        for (let [id, q] of Object.entries(cart)) {
+            count += q; 
+        }
+        document.getElementById('totalQty').innerText = count;
+    }
+
+    // === 發送 WhatsApp ===
+    function sendWhatsApp() {
+        if (Object.keys(cart).length === 0) {
+            alert("請先選擇產品！");
+            return;
+        }
+
+        // --- 設定客戶資料 ---
+        const customerCode = "A2769"; 
+        const phone = "85263771688"; // 惠比壽對接電話
+
+        let msg = `惠比壽 訂貨單：\n(客戶編號: ${customerCode})\n`;
+        msg += "------------------------\n";
+
+        // 保持原順序
+        const orderedCart = products.filter(p => cart[p.id]);
+        
+        orderedCart.forEach(p => {
+            const q = cart[p.id];
+            msg += `${p.name} x ${q}\n`;
+        });
+
+        msg += "------------------------\n";
+        msg += "麻煩晒！"; 
+
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    }
+
+    init();
+</script>
+
+</body>
+</html>
